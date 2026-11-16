@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+import json
+import os
+import sys
+import time
+import uuid
+from pathlib import Path
+
+thread_id = str(uuid.uuid4())
+turn_id = None
+turn_count = 0
+truth_count = 0
+model = None
+pending = None
+capture = Path(os.environ.get('ARX_CODEX_CAPTURE', 'codex-wire.jsonl'))
+
+stderr_bytes = int(os.environ.get('ARX_CODEX_STDERR_BYTES', '0'))
+if stderr_bytes:
+    sys.stderr.write('x' * stderr_bytes)
+if stderr_text := os.environ.get('ARX_CODEX_STDERR_TEXT'):
+    sys.stderr.write(stderr_text + '\n')
+sys.stderr.flush()
+if os.environ.get('ARX_CODEX_FAIL_STARTUP'):
+    if capture_path := os.environ.get('ARX_CODEX_STARTUP_HOME_CAPTURE'):
+        Path(capture_path).write_text(os.environ['CODEX_HOME'])
+    sys.exit(23)
+
+def emit(value):
+    print(json.dumps(value), flush=True)
+
+def note(method, params):
+    emit({'method': method, 'params': {'threadId': thread_id, **params}})
+
+def finish(text, status='completed'):
+    note('item/agentMessage/delta', {'turnId': turn_id, 'itemId':'answer', 'delta': text})
+    note('item/completed', {'turnId': turn_id, 'item': {'type':'agentMessage','id':'answer','text':text}})
+    for tokens in [20, int(os.environ.get('ARX_STUB_TOKENS_PER_TURN', '120')) * turn_count]:
+        note('thread/tokenUsage/updated', {'tokenUsage': {'last': {'inputTokens':tokens,'cachedInputTokens':10,'outputTokens':5,'totalTokens':tokens+5}, 'total': {'inputTokens':9999,'outputTokens':20,'totalTokens':10019}, 'modelContextWindow':999999}})
+    note('turn/completed', {'turn': {'id':turn_id, 'status':status,'items':[],'error':None}})
+
+for line in sys.stdin:
+    op = json.loads(line)
+    with capture.open('a') as out:
+        out.write(json.dumps({'home':os.environ['CODEX_HOME'], 'pid':os.getpid(), 'thread':thread_id, 'op':op})+'\n')
+    method = op.get('method')
+    params = op.get('params', {})
+    if method == 'initialize':
+        if os.environ.get('ARX_CODEX_STALL_INITIALIZE'):
+            time.sleep(5)
+            continue
+        assert params['capabilities']['experimentalApi'] is True
+        emit({'id':op['id'],'result':{'userAgent':'arx-stub'}})
+    elif method == 'thread/start':
+        assert params['approvalPolicy'] == 'never'
+        assert params['config']['project_doc_max_bytes'] == 0
+        assert 'baseInstructions' in params and len(params['dynamicTools']) == 13
+        assert not Path(os.environ['CODEX_HOME'], 'AGENTS.md').exists()
+        assert not Path(os.environ['CODEX_HOME'], 'config.toml').exists()
+        assert Path(os.environ['CODEX_HOME'], 'auth.json').exists()
+        model = params['model']
+        if model == 'fail-start':
+            emit({'id':op['id'],'error':{'code':-1,'message':'start refused'}})
+            continue
+        note('thread/started', {'thread':{'id':thread_id}})
+        emit({'id':op['id'],'result':{'thread':{'id':thread_id},'model':model}})
+    elif method == 'model/list':
+        emit({'id':op['id'],'result':{'data':[{'id':m,'model':m} for m in ['stub-codex','next-model','gpt-5.6-sol','stub-codex-2','refused-model']], 'nextCursor':None}})
+    elif method == 'turn/start':
+        assert params['threadId'] == thread_id
+        model = params['model']
+        if model == 'refused-model':
+            emit({'id':op['id'],'error':{'code':-1,'message':'model is unavailable'}})
+            continue
+        turn_count += 1
+        turn_id = str(uuid.uuid4())
+        note('turn/started', {'turn':{'id':turn_id}})
+        emit({'id':op['id'],'result':{'turn':{'id':turn_id,'status':'inProgress','items':[],'error':None}}})
+        prompt = params['input'][0]['text']
+        if prompt == 'close-stdin':
+            os.close(0)
+            finish('closed')
+            time.sleep(5)
+            sys.exit(0)
+        if 'truth-check' in prompt: truth_count += 1
+        if prompt == 'malformed':
+            print('broken json', flush=True)
+        elif prompt == 'fail-after-start':
+            note('turn/completed', {'turn':{'id':turn_id,'status':'failed','error':{'message':'model is unavailable'}}})
+        elif prompt == 'die':
+            sys.exit(0)
+        elif prompt == 'hang':
+            note('item/agentMessage/delta', {'turnId':turn_id,'itemId':'answer','delta':'waiting'})
+        elif prompt == 'compact' or ('truth-check' in prompt and os.environ.get('ARX_CODEX_COMPACT_TRUTH') == str(truth_count)):
+            note('item/agentMessage/delta', {'turnId':turn_id,'itemId':'answer','delta':'partial before compaction'})
+            for event in ['item/started','item/completed']:
+                note(event, {'turnId':turn_id,'item':{'type':'contextCompaction','id':'compact'}})
+            note('item/tool/call', {'turnId':turn_id,'callId':'abandoned','tool':'edit_file','arguments':{}})
+        elif prompt == 'exhaust' or ('truth-check' in prompt and os.environ.get('ARX_CODEX_EXHAUST_TRUTH')) or ('author the state object' in prompt and os.environ.get('ARX_CODEX_EXHAUST_AUTHOR')):
+            note('turn/completed', {'turn':{'id':turn_id,'status':'failed','error':{'message':'context window exceeded'}}})
+        elif prompt.startswith(('file:', 'store:', 'hand:')):
+            _, tool, args = prompt.split(':', 2)
+            pending = 'server-request-' + str(turn_count)
+            emit({'id':pending,'method':'item/tool/call','params':{'threadId':thread_id,'turnId':turn_id,'callId':'call-'+str(turn_count),'namespace':'arx','tool':tool,'arguments':json.loads(args)}})
+        elif prompt.startswith('[arx] checkpoint ') and 'author the state object' in prompt:
+            path = Path('checkpoint-author.md')
+            finish(path.read_text() if path.exists() else '## Task\nNo task.\n\n## State\nNo changes.\n\n## Decisions\nNone.\n\n## Open\nNone.')
+        elif prompt.startswith('[arx] checkpoint ') and 'truth-check' in prompt:
+            finish('ok')
+        else:
+            if prompt.startswith('[arx] this window is a respawn') and os.environ.get('ARX_CODEX_BLOCK_ROSTER'):
+                for temporary in Path(os.environ['ARX_ROSTER_DIR']).glob('*.toml.tmp'):
+                    temporary.with_suffix('').mkdir(exist_ok=True)
+            finish('codex:' + prompt)
+    elif method == 'turn/interrupt':
+        assert params == {'threadId':thread_id,'turnId':turn_id}
+        emit({'id':op['id'],'result':{}})
+        finish('stopped', 'interrupted')
+    elif method is None and op.get('id') == pending:
+        result = op['result']
+        assert isinstance(result['success'], bool)
+        assert result['contentItems'][0]['type'] == 'inputText'
+        finish('tool-result:' + json.dumps(result))
+        pending = None

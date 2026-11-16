@@ -1,0 +1,1 @@
+The subsystem-cut board charted the morning of 2026-08-30 (decision `bbfaeafb`), kept as the rejected alternative. The live board is `../map.md`, cut by depth layer. Card text here was carried into the `L*` cards; rulings ids were carried with it.

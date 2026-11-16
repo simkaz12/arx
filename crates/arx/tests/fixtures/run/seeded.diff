@@ -1,0 +1,9 @@
+--- a/src/count.rs
++++ b/src/count.rs
+@@ -1,4 +1,5 @@
+ // CANARY: ARX-L1-11-REVIEWER-CANARY
+ pub fn count_lines(text: &str) -> usize {
+-    text.lines().count()
++    // off by one on purpose
++    text.lines().count() + 1
+ }

@@ -1,0 +1,52 @@
+sidecar = "../stub-sidecar"
+
+[main]
+body = "claude-code"
+instructions = "prompts/main.md"
+
+[[models]]
+id = "stub-model"
+body = "claude-code"
+
+[[models]]
+id = "claude-sonnet-5"
+body = "claude-code"
+image = "arx-claude-stub:test"
+
+[[models]]
+id = "gpt-5.6-sol"
+body = "codex"
+image = "arx-codex-stub:test"
+
+[[models]]
+id = "fake-model"
+body = "native"
+provider = "fake"
+
+[[models]]
+id = "fake-model-anthropic"
+body = "native"
+provider = "stubbed"
+
+[roles]
+main = "stub-model"
+runner = "gpt-5.6-sol"
+reviewer = "gpt-5.6-sol"
+drain = "gpt-5.6-sol"
+hand-an = "fake-model-anthropic"
+hand-cc = "claude-sonnet-5"
+hand-cw = "claude-sonnet-5"
+hand-cx = "gpt-5.6-sol"
+hand-cxw = "gpt-5.6-sol"
+hand-ds = "fake-model"
+hand-ex = "claude-sonnet-5"
+
+[providers.fake]
+kind = "openai-compatible"
+base_url = "http://127.0.0.1:0"
+api_key_env = "ARX_TEST_FAKE_KEY"
+
+[providers.stubbed]
+kind = "anthropic"
+base_url = "http://127.0.0.1:0"
+api_key_env = "ARX_TEST_FAKE_KEY"

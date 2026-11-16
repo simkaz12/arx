@@ -1,0 +1,11 @@
+[package]
+name = "arx-engine"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+reqwest = { version = "0.13.4", default-features = false, features = ["blocking", "json", "rustls"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+serde_yaml = "0.9.34"
+uuid = { version = "1", features = ["v4"] }

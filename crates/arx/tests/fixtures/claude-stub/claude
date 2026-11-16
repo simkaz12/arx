@@ -1,0 +1,64 @@
+#!/bin/sh
+set -eu
+
+session_id=""
+prev=""
+for arg in "$@"; do
+  [ "$prev" = "--session-id" ] && session_id="$arg"
+  prev="$arg"
+done
+argv_line="$*"
+
+config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+mkdir -p "$config_dir"
+echo $$ > "$config_dir/claude-stub.pid"
+
+brief="$(cat)"
+
+sleep_secs=$(printf '%s\n' "$brief" | sed -n 's/.*\[sleep:\([0-9]*\)\].*/\1/p')
+[ -n "$sleep_secs" ] && sleep "$sleep_secs"
+
+for directive in $(printf '%s\n' "$brief" | grep -o '\[write:[^]]*\]' || true); do
+  body=$(printf '%s' "$directive" | sed 's/^\[write://; s/\]$//')
+  path=${body%%=*}
+  text=${body#*=}
+  printf '%s\n' "$text" >"$path" 2>>"$config_dir/claude-stub-write-errors.log" || true
+done
+
+cred_present=false
+if [ -f "$config_dir/.credentials.json" ] && grep -q claudeAiOauth "$config_dir/.credentials.json" 2>/dev/null; then
+  cred_present=true
+fi
+
+session_dir="$config_dir/projects/stub"
+mkdir -p "$session_dir"
+session_file="$session_dir/$session_id.jsonl"
+escaped_argv="$(printf '%s' "$argv_line" | sed 's/\\/\\\\/g; s/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')"
+canary=false
+if [ -n "${ARX_CANARY_L2CLOSE:-}" ]; then
+  canary=true
+fi
+{
+  printf '{"type":"argv","argv":"%s"}\n' "$escaped_argv"
+  printf '{"type":"cred","present":%s}\n' "$cred_present"
+  printf '{"type":"line2"}\n'
+  printf '{"type":"env","canary":%s}\n' "$canary"
+} >"$session_file"
+
+first_line="$(printf '%s\n' "$brief" | head -n1)"
+escaped_first_line="$(printf '%s' "$first_line" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+
+denials=""
+for directive in $(printf '%s\n' "$brief" | grep -o '\[deny:[^]]*\]' || true); do
+  tool=$(printf '%s' "$directive" | sed 's/^\[deny://; s/\]$//')
+  entry="{\"tool_name\":\"$tool\"}"
+  if [ -z "$denials" ]; then
+    denials="$entry"
+  else
+    denials="$denials,$entry"
+  fi
+done
+
+printf '{"type":"result","subtype":"success","is_error":false,"result":"stub verdict: %s","session_id":"%s","permission_denials":[%s]}\n' \
+  "$escaped_first_line" "$session_id" "$denials"
+exit 0

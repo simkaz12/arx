@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+args=("$@")
+
+config_dir="${CODEX_HOME:-$HOME/.codex}"
+mkdir -p "$config_dir"
+echo "$$" > "$config_dir/codex-stub.pid"
+printf '%s\n' "${args[*]}" > "$config_dir/codex-stub-argv"
+
+brief="$(cat)"
+
+if [[ "$brief" =~ \[sleep:([0-9]+)\] ]]; then
+  sleep "${BASH_REMATCH[1]}"
+fi
+
+auth_present=false
+if [[ -f "$config_dir/auth.json" ]]; then
+  auth_present=true
+fi
+
+argv_json=""
+for arg in "${args[@]}"; do
+  escaped_arg="$(printf '%s' "$arg" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+  if [[ -z "$argv_json" ]]; then
+    argv_json="\"$escaped_arg\""
+  else
+    argv_json="$argv_json,\"$escaped_arg\""
+  fi
+done
+
+schema_path=""
+for i in "${!args[@]}"; do
+  if [[ "${args[$i]}" == "--output-schema" ]]; then
+    next=$((i + 1))
+    schema_path="${args[$next]:-}"
+    break
+  fi
+done
+
+thread_id="stub-$$-$(date +%s)"
+session_dir="$config_dir/sessions/2026/09/02"
+mkdir -p "$session_dir"
+session_file="$session_dir/rollout-2026-09-02T00-00-00-$thread_id.jsonl"
+{
+  printf '{"stub":"argv","argv":[%s]}\n' "$argv_json"
+  printf '{"stub":"auth","present":%s,"mode":"600"}\n' "$auth_present"
+  if [[ -n "$schema_path" ]]; then
+    schema_present=false
+    if [[ -f "$schema_path" ]]; then
+      schema_present=true
+    fi
+    printf '{"stub":"schema","path":"%s","present":%s}\n' "$schema_path" "$schema_present"
+  fi
+  canary=false
+  if [[ -n "${ARX_CANARY_L2CLOSE:-}" ]]; then
+    canary=true
+  fi
+  printf '{"stub":"env","canary":%s}\n' "$canary"
+} > "$session_file"
+
+if [[ -n "$schema_path" ]]; then
+  scanned="$(printf '%s\n' "$brief" | awk 'f{print} /^$/{f=1}')"
+  first_line="$(printf '%s\n' "$scanned" | grep -m1 '^probe-' || true)"
+  if [[ -z "$first_line" ]]; then
+    first_line="$(printf '%s\n' "$scanned" | head -n1)"
+  fi
+else
+  first_line="$(printf '%s\n' "$brief" | head -n1)"
+fi
+
+if [[ -n "$schema_path" ]]; then
+  if [[ "$first_line" == probe-malformed:* ]]; then
+    agent_message='{"verdict":"maybe"}'
+  elif [[ "$schema_path" == */drain-schema.json ]]; then
+    input_path="$(dirname "$schema_path")/drain-input.json"
+    ids=()
+    if [[ -f "$input_path" ]]; then
+      while IFS= read -r id; do
+        ids+=("$id")
+      done < <(sed -n 's/^      "id": "\(.*\)",$/\1/p' "$input_path")
+    fi
+    suggestions=""
+    for id in "${ids[@]}"; do
+      if [[ -n "$suggestions" ]]; then
+        suggestions="$suggestions,"
+      fi
+      suggestions="$suggestions{\"id\":\"$id\",\"action\":\"promote\",\"supersedes\":null,\"reason\":\"stub\"}"
+    done
+    agent_message="{\"suggestions\":[$suggestions]}"
+  elif [[ "$first_line" == probe-write:* ]]; then
+    rel_path="${first_line#probe-write:}"
+    rel_path="${rel_path# }"
+    target="/hand/repo/$rel_path"
+    err_file="$config_dir/codex-stub-write-error.log"
+    : > "$err_file"
+    if { printf l2-09 > "$target"; } 2>"$err_file"; then
+      summary="wrote $target"
+    else
+      summary="write refused: $(cat "$err_file" 2>/dev/null || true)"
+    fi
+    escaped_summary="$(printf '%s' "$summary" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+    agent_message="{\"verdict\":\"PASS\",\"summary\":\"$escaped_summary\",\"must_fix\":[]}"
+  else
+    escaped_first_line="$(printf '%s' "$first_line" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+    agent_message="{\"verdict\":\"PASS\",\"summary\":\"stub verdict: $escaped_first_line\",\"must_fix\":[]}"
+  fi
+else
+  if [[ "$first_line" == probe-write:* ]]; then
+    rel_path="${first_line#probe-write:}"
+    rel_path="${rel_path# }"
+    target="/hand/repo/$rel_path"
+    err_file="$config_dir/codex-stub-write-error.log"
+    : > "$err_file"
+    if { printf l2-09 > "$target"; } 2>"$err_file"; then
+      agent_message="wrote $target"
+    else
+      agent_message="write refused: $(cat "$err_file" 2>/dev/null || true)"
+    fi
+  else
+    agent_message="stub verdict: $first_line"
+  fi
+fi
+
+escaped_message="$(printf '%s' "$agent_message" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+
+printf '{"type":"thread.started","thread_id":"%s"}\n' "$thread_id"
+printf '{"type":"turn.started"}\n'
+printf '{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"%s"}}\n' "$escaped_message"
+printf '{"type":"turn.completed","usage":{"input_tokens":11,"cached_input_tokens":3,"cache_write_input_tokens":0,"output_tokens":7,"reasoning_output_tokens":1}}\n'
+
+exit 0

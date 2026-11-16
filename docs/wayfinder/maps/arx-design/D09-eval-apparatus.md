@@ -1,0 +1,56 @@
+---
+id: D09
+labels: wayfinder:grill-with-docs
+status: closed
+assignee: none
+resolved: 2026-08-28
+blocked-by: none
+grounding: findings/T06-findings.md
+---
+
+# D09 — The eval apparatus, designed against what the corpus can actually answer
+
+> **Closed 2026-08-28** after one grill, three rounds, nine rulings and one superseded fact — see Resolution. The subject changed under the ticket: what survives is not an eval apparatus but instrumentation, four policy constants and the record the harness keeps so the owner can move them. The sections below are kept as the ticket stood when opened.
+
+## Blocked on D10 — released 2026-08-27
+
+**D10 closed (`a194176a`): arx makes no claim against Claude Code and runs no evaluation against it.** This ticket therefore certifies against nothing external. What it can still own is arx's own instrumentation for tuning arx's own policies — the admission threshold, the reset counter, what the harness records per step — with the labels sourced from arx's own use rather than from a comparison. The control-arm bullet below is moot. The section as it stood before the release follows.
+
+
+All three sources this ticket named for day-one degradation labels are dead. Seat verdicts died with seats (2026-08-26 trim). The fix-thread gate and observer exhaust died with the observer and the fix thread (2026-08-27, `da0ccf24`/`749c8765` and the decisions they carry forward — `993ef454` puts the fix thread out of v1 outright, superseded 2026-08-27 by `1686f374`). `map.md:156` already recorded the first death; the observer drop finishes it. This is not three stale sentences to reword — it is D09 losing every automatic judge it was designed to lean on, with nothing named to replace them. The ticket cannot be grilled as charted until D10 states what arx's degradation labels are supposed to certify against, because "what does the corpus need to answer" has no content while the thing doing the judging is undefined. Hence `blocked-by: D10`.
+
+The next-steps debate independently confirmed the same gap from the other direction (`S-RUNE-9`, agreed, major): the contract D09 was meant to carry cannot be copied out of the ticket until labels are re-sourced.
+
+## Question
+
+T06 established what the retrospective corpus can and cannot do: admission decisions are directly simulatable (every tool result's size and downstream handling is recorded), eviction decisions are not (occupancy is strictly monotonic in all 270 sessions — nothing was ever evicted to compare against), and the ~120k quality boundary is unmeasurable without labels the transcripts don't carry. To settle:
+
+- **The offline eval design.** What does the admission simulator actually score — replay the ladder against recorded tool results and count what a deferral would have saved, priced against the pull-rate unknowable offline? And are the 175 real digest calls the labelled close-out set they look like?
+- **The constants' real status.** The ~120k boundary is practiced as a soft aim overshot to a median digest point of 162k. Does the smart-zone constant survive as config, get re-derived per model from arx's own instrumented sessions, or get dropped in favour of the pressure signal alone?
+- **Instrumentation arx must build in from day one.** Degradation labels need a judgement of "was this output wrong" that no transcript carries — POSITION §5 already names self-report at a seam. What exactly does the harness record per step so its own corpus can answer what the incumbent's cannot: proposal/disposition pairs, occupancy-at-correction? *Gained 2026-08-28 from D15 (`b03f77fc`): one self-labelling signal with no owner in the loop — the respawned main's orientation report finding the state object wrong rather than thin. Countable at the reset seam, self-reported, the falsehood residual the state object's checks cannot catch.*
+- **Intervention capture.** The premises debate named this the one loop-only behaviour with no ticket anywhere (`S-RUNE-6`, contested — sol's counter was "the appetite changed" rather than a refutation of the underlying claim, and the settling check asked for exactly the test this bullet now owns): a behavioural test of whether capturing proposal/disposition/aftermath at the moment the owner steers, corrects, or overrides yields evidence Claude Code's own instrumentation cannot produce. What arx records at an intervention, and whether that record is itself one of the day-one labels this ticket needs, is open here rather than assumed.
+- **The two ritual drifts.** Digest fires as a direct MCP call 175:11 over the slash command, and at 162k not 120k. What do these mean — habit drift, a better ritual than the documented one, or a documented ritual nobody ratified? Owner's read wanted, then written down wherever the ritual is specced. (This drift was measured against the old digest-as-narrative-record operation, which `da0ccf24` dropped — the state object's own write-frequency habits, once there are sessions to measure, are this bullet's actual successor question.)
+- **The control arm.** SURVEY §8: the incumbent baseline depletes the day arx becomes the driver. What minimum deliberate use of Claude Code keeps the baseline alive, and is that cost accepted?
+- **The threshold's payoff is still unpriced, and now for a sharper reason.** The plans debate found the admission threshold's volume evidence real (1k-3k elbow, T06) but its payoff link unmeasured, specifically because this ticket had already lost both auto-labelling sources it would have used to measure it (`S-RUNE-7`, agreed, major). That finding predates the observer drop; it is not resolved by it, since the sources it named are simply more comprehensively dead now. The premises debate made the same point about the ticket as a whole: feel-first design with nothing running generates churn, and the corrective licensed to catch it is the least-built part of the map (`S-RUNE-7`, contested, settling check: an effort ledger comparing discarded design cost against concrete rework prevented — not run here, named as the open falsifier).
+
+**Dead, kept as history rather than deleted.** Two prior sessions gave this ticket auto-labelling sources; both are gone and neither left a replacement.
+
+- *Seats/thread session (2026-08-25):* seat verdicts were to be the degradation labels — every judging seat's verdict a labelled example, every seat spawn a live probe of state-object sufficiency (`e0564add`). Dead: there are no seats. The 2026-08-26 trim removed the bench this depended on (`map.md:156`).
+- *Fusion-harness command survey (2026-08-25, `5b9570c6`, `7c849074`):* a fix thread's gate — a self-evaluating pass/fail minted by the observer, expiring green — was to be a second auto-labelling source, with the observer's own inconsistency tally flushed to the store at cut as flagged digest material. Dead twice over: the fix thread is out of v1 (`993ef454`, superseded 2026-08-27 by `1686f374`), and the observer that would have minted the gate and flushed the tally is dropped (`749c8765`). No v2 kind for "observer exhaust" is needed because there is no observer to exhaust.
+
+## Resolution
+
+One grill, three rounds, no debate. Every bullet above has an answer or a named grave.
+
+- **What it is now** (`01647e3a`). After D10 the apparatus certifies nothing external. It is instrumentation for four policy constants: the admission default and per-tool override table (`32809bf6`), the checkpoint token-delta (`2c198c9f`), the reset reserve (`d65f8fe1`), and the occupancy nudge ruled here. No scorer, no model judge, no degradation labels — the evidence base is arx's own thread logs and the judge is the owner reading counts. `8c427f93` ("evals are almost the best-done part") is superseded by `22899fd8`: the CC corpus is no longer a retrospective eval set, bounces are not labels because arx's store has no bounce, digests are gone, and the felt verdict in daily use is the eval. The premises debate's effort-ledger falsifier is out of scope — `a194176a`'s "if it works it works" already answers it.
+- **The offline eval design** is dropped (`e50e2fcf`). A replay over the CC transcripts can only count admission volume, which T06 already did; it cannot see pulls, because no pull ever happened in that corpus. The 175 digest calls label nothing arx still produces.
+- **The constants.** The ~120k boundary survives — owner ruling over the round-1 recommendation to drop it — as a **nudge** (`f11a9548`): said once when main crosses it, both on the operator surface and as one line in the window, and nothing follows from it. Per-model config, default 120k. Main only: a hand should die well short of 120k, and one that crosses it is a brief too big for one dispatch, logged rather than killed. The checkpoint delta gets its default at build from the first real state-object sizes (`25664aa5`); the admission default and the reserve already had theirs.
+- **Instrumentation** is harness-authored event lines in the thread's transcript log, not a fourth file (`340b3f2e`): each admission outcome and whether the handle was later pulled; rewinds with tokens cut; checkpoint and reset events with their mechanical-check result; the respawned main's orientation verdict — fine, thin, wrong (`b03f77fc`); stop → correction → continue/kill outcomes and stub exit statuses; a hand crossing the nudge line. *D05 (2026-08-28, `04870014`): the stop line becomes steer, tap and kill events per dispatch, plus permission-wall stops.* Cross-thread counts are a grep over thread dirs; no aggregator in v1.
+- **Who moves the knobs** (`d5e60f47`): the owner, always. The harness surfaces per-tool pull-rate — pulls over externalizations — and the owner edits the override table; same for the other three constants. `32809bf6`'s "pull-rate moves the table" means through the owner. This is also the threshold-payoff bullet's answer: the payoff is priced live by pull-rate, and nowhere else.
+- **Intervention capture is the ember** (`8915c49b`, `c5c0dce8`, `2acce830`). When the owner corrects main, the owner writes the ember — a correction or standing guideline in the owner's own words, small — and the harness stores it straight into the store with the `(thread, turn)` handle: no quarantine, no drain, in effect from birth, grounded at session start alongside hot. Two verbs, one owner: only the owner appoints, only the owner removes; no decay, no recurrence ladder, no codify suggestion — v1's escalation ladder does not carry over. Not a claim, so the four-field shape and main-as-sole-claim-minter stand. A correction given to a hand through stop is a stop event, not an ember. This closes POSITION §5's intervention problem: the explicit mark is the ember save, embers per thread is the friction count, and `S-RUNE-6`'s behavioural test is moot with D10.
+- **The two ritual drifts** died with the digest; the successor question, state-object write frequency, is the checkpoint clock D15 ruled and the delta above.
+- **The control arm** is moot (`a194176a`).
+
+Left open, not ticketed: repeated hand crossings of the 120k line mean briefs are too big and want some future shortening of scopes — owner: "quite tricky". The count lives in the log; nothing acts on it. Recorded in the map's fog list.
+
+Vocabulary in `CONTEXT.md`: Ember and Nudge added; Store, Grounding and Transcript log amended.

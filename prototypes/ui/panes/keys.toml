@@ -1,0 +1,36 @@
+[normal]
+insert        = ["i", "Enter"]        # Enter with the input focused
+panel_1       = ["1"]
+panel_2       = ["2"]
+panel_3       = ["3"]
+panel_4       = ["4"]
+next_panel    = ["l", "Tab"]
+prev_panel    = ["h", "BackTab"]
+down          = ["j", "Down"]
+up            = ["k", "Up"]
+top           = ["g"]                 # gg in the big view; single g in a panel
+bottom        = ["G"]
+page_down     = ["Ctrl-d", "PageDown"]
+page_up       = ["Ctrl-u", "PageUp"]
+open          = ["Enter"]             # in a panel: focus the big view on the party
+back          = ["Esc"]               # big view -> the panel it came from
+help          = ["?"]
+quit          = ["q", "Ctrl-c"]
+abort         = ["Esc"]               # while main streams, in any mode
+
+[insert]
+submit        = ["Enter"]
+newline       = ["Alt-Enter"]
+normal        = ["Esc"]
+history_up    = ["Up"]
+history_down  = ["Down"]
+complete      = ["Tab"]
+
+[modal]
+confirm       = ["Enter"]
+cancel        = ["Esc"]
+down          = ["j", "Down"]
+up            = ["k", "Up"]
+
+[split]
+swap_pane     = ["Tab"]               # big view on a split page: swap brief/turns focus

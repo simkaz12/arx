@@ -1,0 +1,11 @@
+[package]
+name = "inline"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+ratatui = "0.30"
+crossterm = "0.29"
+tui-markdown = "0.3"

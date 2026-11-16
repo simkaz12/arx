@@ -1,0 +1,14 @@
+[main]
+body = "claude-code"
+
+[[models]]
+id = "claude-fable-5"
+body = "claude-code"
+
+[[models]]
+id = "claude-sonnet-5"
+body = "claude-code"
+
+[roles]
+main = "claude-fable-5"
+hand-ex = "claude-sonnet-5"

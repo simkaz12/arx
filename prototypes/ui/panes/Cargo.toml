@@ -1,0 +1,12 @@
+[workspace]
+
+[package]
+name = "panes"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.6.6", features = ["derive"] }
+crossterm = "0.29.0"
+ratatui = { version = "0.30.2", default-features = false, features = ["crossterm"] }
+unicode-width = "0.2.2"

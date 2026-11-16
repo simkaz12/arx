@@ -1,0 +1,54 @@
+[main]
+body = "claude-code"
+instructions = "prompts/main.md"
+
+[[models]]
+id = "claude-sonnet-5"
+body = "claude-code"
+image = "arx-hand-claude:2.1.258"
+
+[[models]]
+id = "claude-opus-5"
+body = "claude-code"
+image = "arx-hand-claude:2.1.258"
+
+[[models]]
+id = "gpt-5.6-sol"
+body = "codex"
+image = "arx-hand-codex:0.152.1"
+
+[[models]]
+id = "gpt-5.6-luna"
+body = "codex"
+image = "arx-hand-codex:0.152.1"
+
+[[models]]
+id = "claude-fable-5-1"
+body = "claude-code"
+image = "arx-hand-claude:2.1.258"
+
+[[models]]
+id = "deepseek-v4-flash"
+body = "native"
+provider = "deepseek"
+
+[roles]
+main = "claude-opus-5"
+runner = "gpt-5.6-sol"
+hand-ex = "claude-sonnet-5"
+hand-do = "gpt-5.6-sol"
+bolt = "gpt-5.6-luna"
+reviewer = "gpt-5.6-sol"
+drain = "gpt-5.6-sol"
+
+[terminal]
+front = "panes"
+
+[store]
+scope = "arx"
+root = "~/.local/share/arx/store"
+
+[providers.deepseek]
+kind = "openai-compatible"
+base_url = "https://api.deepseek.com"
+api_key_env = "DEEPSEEK_API_KEY"

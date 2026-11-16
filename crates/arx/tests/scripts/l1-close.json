@@ -1,0 +1,41 @@
+{
+  "card": "L1-close",
+  "operator": [
+    "store:save:{\"scope\":\"testscope\",\"kind\":\"fact\",\"question\":\"what is the launch codename\",\"answer\":\"kestrel\",\"why\":\"L1-close rehearsal\"}",
+    "hand:dispatch:hand-cc:Summarise seeded.diff for the close",
+    "hand:dispatch:hand-cx:Review seeded.diff for the close",
+    "hand:dispatch:hand-ds:say the word",
+    "hand:dispatch:judge:Judge seeded.diff and return a verdict",
+    "hand:dispatch:fake:[delay:50] [stop:which db?] [verdict:fake done]",
+    "plain check"
+  ],
+  "expect": [
+    {"name": "grounding", "kind": "system", "contains": "what is the launch codename"},
+    {"name": "save-gate", "kind": "gate", "tool": "save", "verdict": "allow"},
+    {"name": "cc-gate", "kind": "gate", "tool": "dispatch", "verdict": "allow"},
+    {"name": "spawn-h1", "kind": "spawn", "hand": "h1", "after": "cc-gate"},
+    {"name": "cx-gate", "kind": "gate", "tool": "dispatch", "verdict": "allow"},
+    {"name": "spawn-h2", "kind": "spawn", "hand": "h2", "after": "cx-gate"},
+    {"name": "ds-gate", "kind": "gate", "tool": "dispatch", "verdict": "allow"},
+    {"name": "spawn-h3", "kind": "spawn", "hand": "h3", "after": "ds-gate"},
+    {"name": "judge-gate", "kind": "gate", "tool": "dispatch", "verdict": "allow"},
+    {"name": "spawn-h4", "kind": "spawn", "hand": "h4", "after": "judge-gate"},
+    {"name": "fake-gate", "kind": "gate", "tool": "dispatch", "verdict": "allow"},
+    {"name": "spawn-h5", "kind": "spawn", "hand": "h5", "after": "fake-gate"},
+    {"name": "delivered-h1", "kind": "delivered", "hand": "h1", "after": "spawn-h1"},
+    {"name": "cc-verdict", "kind": "turn", "role": "arx", "contains": "[hand h1 verdict]", "after": "cc-gate"},
+    {"name": "delivered-h2", "kind": "delivered", "hand": "h2", "after": "spawn-h2"},
+    {"name": "cx-verdict", "kind": "turn", "role": "arx", "contains": "[hand h2 verdict]", "after": "cx-gate"},
+    {"name": "delivered-h3", "kind": "delivered", "hand": "h3", "after": "spawn-h3"},
+    {"name": "ds-verdict", "kind": "turn", "role": "arx", "contains": "[hand h3 verdict]", "after": "ds-gate"},
+    {"name": "delivered-h4", "kind": "delivered", "hand": "h4", "after": "spawn-h4"},
+    {"name": "judge-verdict", "kind": "turn", "role": "arx", "contains": "[hand h4 verdict]", "after": "judge-gate"},
+    {"name": "delivered-h5-stop", "kind": "delivered", "hand": "h5", "after": "spawn-h5"},
+    {"name": "fake-stop", "kind": "turn", "role": "arx", "contains": "[hand h5 stop] which db?", "after": "fake-gate"},
+    {"name": "steer-gate", "kind": "gate", "tool": "steer", "verdict": "allow", "after": "fake-stop"},
+    {"name": "steer-h5", "kind": "steer", "hand": "h5", "after": "steer-gate"},
+    {"name": "delivered-h5-verdict", "kind": "delivered", "hand": "h5", "after": "steer-h5"},
+    {"name": "fake-verdict", "kind": "turn", "role": "arx", "contains": "[hand h5 verdict]", "after": "steer-gate"},
+    {"name": "check-turn", "kind": "turn", "role": "operator", "contains": "plain check"}
+  ]
+}

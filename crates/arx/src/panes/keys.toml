@@ -1,0 +1,46 @@
+[normal]
+expand        = ["Enter"]             # main's page: toggle a fold, or open a call's trace
+insert        = ["i", "Enter"]        # Enter with the input focused
+panel_1       = ["1"]
+panel_2       = ["2"]
+panel_3       = ["3"]
+panel_4       = ["4"]
+next_panel    = ["l", "Tab"]
+prev_panel    = ["h", "BackTab"]
+down          = ["j", "Down"]
+up            = ["k", "Up"]
+top           = ["g"]                 # gg in the big view; single g in a panel
+bottom        = ["G"]
+page_down     = ["Ctrl-d", "PageDown"]
+page_up       = ["Ctrl-u", "PageUp"]
+open          = ["Enter"]             # in a panel: focus the big view on the party
+back          = ["Esc"]               # big view -> the panel it came from
+close         = ["x"]                 # kill (with confirm) or remove the selected row
+stop          = ["q"]                 # stop main's turn, or kill the selected hand/reviewer
+help          = ["?"]
+quit          = ["Ctrl-c"]
+
+[insert]
+submit        = ["Enter"]
+newline       = ["Alt-Enter"]
+normal        = ["Esc"]
+left          = ["Left"]
+right         = ["Right"]
+home          = ["Home", "Ctrl-a"]
+end           = ["End", "Ctrl-e"]
+delete        = ["Delete"]
+history_up    = ["Up"]
+history_down  = ["Down"]
+complete      = ["Tab"]
+paste         = ["Ctrl-v"]
+
+[modal]
+confirm       = ["Enter"]
+cancel        = ["Esc"]
+down          = ["j", "Down"]
+up            = ["k", "Up"]
+prev_tab      = ["h"]
+next_tab      = ["l"]
+
+[split]
+swap_pane     = ["Tab"]               # big view on a split page: swap brief/turns focus
